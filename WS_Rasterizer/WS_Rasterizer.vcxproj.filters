@@ -4,6 +4,9 @@
     <Filter Include="Source Files">
       <UniqueIdentifier>{deddbc93-03ee-4a35-98c8-b27da3fcc8dc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{23ec1121-683d-4083-a139-cfe30918660a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
