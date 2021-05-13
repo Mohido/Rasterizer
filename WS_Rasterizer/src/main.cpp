@@ -1,11 +1,20 @@
-#include <windows.h>
-#include <stdlib.h>     /* srand, rand */
-#include <time.h>       /* time */
+#include <windows.h>    // _WINDOWS_ 
+#include <string>
+#include "Geometry.h"
 
-LRESULT CALLBACK eventHandler(HWND, UINT, WPARAM, LPARAM);
-HWND initWindow(HINSTANCE processId, int displayWidth ,int displayHeight);
-void gradGenerator(char* pixels, unsigned int width, unsigned int height, unsigned int pixelSize);
-void initCanvas(HWND windowId, void* pixelsArray, int displayWidth, int displayHeight, int bytesPerPixel);
+
+#define SEC_TO_NANOSEC 1000000000LL
+#define SEC_TO_MILLISEC 1000LL
+#define NANOSECONDS_PER_FRAME (SEC_TO_NANOSEC/60LL)
+
+
+void printMessage(const std::wstring& msg);
+LRESULT CALLBACK eventHandler(HWND, UINT, WPARAM, LPARAM); // handle the window events
+HWND initWindow(HINSTANCE processId, int displayWidth ,int displayHeight); // initialize the window
+void gradGenerator(char* pixels, const unsigned int& width, const unsigned int& height, const unsigned int& pixelSize, const unsigned int& offset); // fill the array of pixels with a gradient colour
+void initCanvas(const HWND& windowId, void* pixelsArray, const int& displayWidth, const int& displayHeight, const int& bytesPerPixel); // initialize the bitmap and assign it to the screen
+long long getCurrentTime_nanoseconds(); // gets a high resolution time in nanoseconds
+
 
 
 int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nCmdShow)
@@ -16,7 +25,7 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     int bytesPerPixel = 4; /// 4 bytes per pixel
     int imageSize = displayHeight * displayWidth * bytesPerPixel;
     void* pixelsArray = VirtualAlloc(0, imageSize , MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-    gradGenerator((char*)pixelsArray, displayWidth,displayHeight, bytesPerPixel); // initialize the pixel array
+    gradGenerator((char*)pixelsArray, displayWidth,displayHeight, bytesPerPixel, 0); // initialize the pixel array
 
     //__________________________ Initializing the window area
     HWND windowId = initWindow(processId, displayWidth, displayHeight);
@@ -24,13 +33,59 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     
     
     //________________________ program main loop.
-    MSG msg = {0};
-    while (GetMessage(&msg, NULL,NULL,NULL)) {
-        TranslateMessage(&msg);
-        DispatchMessageA(&msg);
+    long long lastTime = getCurrentTime_nanoseconds();
+    MSG msg = { 0 };
+    bool running = true;
+    unsigned int offset = 0; // just for rendering a gradient moving in the screen
+    while (running) {
+
+        /*Process new events*/ // Note: Peekmessage returns false if there is no new message
+        while (PeekMessage(&msg, NULL, NULL, NULL, PM_REMOVE)) { // peek does not halt the program, unlike getMessage(); 
+            if (msg.message == WM_QUIT) running = false;
+            TranslateMessage(&msg);     // adding a message to the queue
+            DispatchMessageA(&msg);    // we process the last message we caught
+        }
+
+        /*Update and render*/
+        long long current_time = getCurrentTime_nanoseconds();
+        if (current_time - lastTime >= NANOSECONDS_PER_FRAME) { // every frame 
+            /*printMessage(L"Time of update: " + std::to_wstring((current_time - lastTime)/1000000LL) + L" ms");*/
+            lastTime = current_time;
+            gradGenerator((char*)pixelsArray, displayWidth, displayHeight, bytesPerPixel, offset++);    // rerender the pixel array
+            initCanvas(windowId, pixelsArray, displayWidth, displayHeight, bytesPerPixel);              // re-initialize the canvas
+        }
     }
-    
+     
     return 0;
+}
+
+
+
+
+
+/*
+* Explanation: Prints out a message to the console.
+* Parameters: A wide string which is the message value
+*/
+void printMessage(const std::wstring& msg) {
+    LPCWSTR out_c = (LPCWSTR)msg.c_str();
+    OutputDebugStringW(out_c);
+    OutputDebugStringW(L"\n");
+}
+
+
+
+
+
+/*
+* Explanation: A high resolution time query.
+* Returns: The current high-resolution system time in nanoseconds.
+*/
+long long getCurrentTime_nanoseconds() {
+    LARGE_INTEGER ticks; LARGE_INTEGER ticksPerSec;
+    QueryPerformanceCounter(&ticks);                                    //  ticks since the begining of the program
+    QueryPerformanceFrequency(&ticksPerSec);                            //  ticks per second
+    return (SEC_TO_NANOSEC * ticks.QuadPart) / ticksPerSec.QuadPart;    // return the elapsed time in nanoseconds
 }
 
 
@@ -45,7 +100,7 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     displayHeight - the image height (display / client_area / Canvas height)
     bytesPerPixel - How many bytes do each pixel occupy?
 */
-void initCanvas(HWND windowId, void* pixelsArray, int displayWidth, int displayHeight, int bytesPerPixel) {
+void initCanvas(const HWND& windowId, void* pixelsArray, const int& displayWidth, const int& displayHeight, const int& bytesPerPixel) {
     //_______________________________  Creating a bitmap to render the window Client area (visible area) with
     HDC windowCanvas = GetDC(windowId);
     BITMAPINFO bmi = { 0 }; // background bitmap
@@ -82,15 +137,15 @@ void initCanvas(HWND windowId, void* pixelsArray, int displayWidth, int displayH
     height - height of the pixel arra
     pixelSize - bytes per pixel for the remapping from coordinates to the exact pixel values
 */
-void gradGenerator(char* pixels, unsigned int width, unsigned int height, unsigned int pixelSize) {
+void gradGenerator(char* pixels, const unsigned int& width, const unsigned int& height, const unsigned int& pixelSize, const unsigned int& offset) {
     if (pixelSize != 4) {
         return;
     }
     for (unsigned int x = 0; x < width; x++) {
         for (unsigned int y = 0; y < height; y++) {
             unsigned int index = (x + y * width ) * pixelSize;
-            pixels[index] = x % 255;            //r
-            pixels[index + 1] = y % 255;        //g
+            pixels[index] = (x+offset) % 255;            //r
+            pixels[index + 1] = (y+offset) % 255;        //g
             pixels[index + 2] = index % 255;    //b
        }   
     }
