@@ -1,21 +1,25 @@
 #include <windows.h>    // _WINDOWS_ 
 #include <string>
+#include <random>
 #include "Geometry.h"
-
+#include "renderer.h"
 
 #define SEC_TO_NANOSEC 1000000000LL
 #define SEC_TO_MILLISEC 1000LL
 #define NANOSECONDS_PER_FRAME (SEC_TO_NANOSEC/60LL)
+#define STARS_COUNT 10000
 
 
-void printMessage(const std::wstring& msg);
+
+void printMessage(const std::wstring& msg); //printing a message to the console
 LRESULT CALLBACK eventHandler(HWND, UINT, WPARAM, LPARAM); // handle the window events
-HWND initWindow(HINSTANCE processId, int displayWidth ,int displayHeight); // initialize the window
-void gradGenerator(char* pixels, const unsigned int& width, const unsigned int& height, const unsigned int& pixelSize, const unsigned int& offset); // fill the array of pixels with a gradient colour
-void initCanvas(const HWND& windowId, void* pixelsArray, const int& displayWidth, const int& displayHeight, const int& bytesPerPixel); // initialize the bitmap and assign it to the screen
+HWND initWindow(HINSTANCE processId, const unsigned int& displayWidth , const unsigned int& displayHeight); // initialize the window
 long long getCurrentTime_nanoseconds(); // gets a high resolution time in nanoseconds
+int randomInteger(int min, int max);
 
 
+
+/*======================== MAIN FUNCTION ============================*/
 
 int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nCmdShow)
 {   
@@ -25,20 +29,37 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     int bytesPerPixel = 4; /// 4 bytes per pixel
     int imageSize = displayHeight * displayWidth * bytesPerPixel;
     void* pixelsArray = VirtualAlloc(0, imageSize , MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-    gradGenerator((char*)pixelsArray, displayWidth,displayHeight, bytesPerPixel, 0); // initialize the pixel array
+
+    
+    /*Initializing the stars field*/
+    renderer::Color starColor = { 255,255,255,0 };      //white
+    geometry::Vector3<float> stars[STARS_COUNT];
+    std::uniform_int_distribution<int> distribution(-1000, 1000);   // the range of the generator, This is a function that takes an engine later
+    std::default_random_engine generator;                           // the random generator engine
+    for (int i = 0; i < STARS_COUNT; i++) {
+        float x = (float)(distribution(generator) % displayWidth);
+        float y = (float)(distribution(generator) % displayHeight);
+        float z = (float)(distribution(generator) % 5);
+        geometry::Vector3<float> temp(x,y,z);
+        stars[i] = temp;
+    }
+
+
+    
+
+
+
 
     //__________________________ Initializing the window area
     HWND windowId = initWindow(processId, displayWidth, displayHeight);
-    initCanvas(windowId, pixelsArray, displayWidth, displayHeight, bytesPerPixel);
+    renderer::renderCanvas(windowId, pixelsArray, displayWidth, displayHeight, bytesPerPixel);
     
     
     //________________________ program main loop.
     long long lastTime = getCurrentTime_nanoseconds();
     MSG msg = { 0 };
     bool running = true;
-    unsigned int offset = 0; // just for rendering a gradient moving in the screen
     while (running) {
-
         /*Process new events*/ // Note: Peekmessage returns false if there is no new message
         while (PeekMessage(&msg, NULL, NULL, NULL, PM_REMOVE)) { // peek does not halt the program, unlike getMessage(); 
             if (msg.message == WM_QUIT) running = false;
@@ -49,18 +70,36 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
         /*Update and render*/
         long long current_time = getCurrentTime_nanoseconds();
         if (current_time - lastTime >= NANOSECONDS_PER_FRAME) { // every frame 
-            /*printMessage(L"Time of update: " + std::to_wstring((current_time - lastTime)/1000000LL) + L" ms");*/
+            /*Inputing logic*/
+            //..
+            //..
+            /*Rendering logic*/
+            renderer::clearPixels((char*)pixelsArray, displayWidth, displayHeight, bytesPerPixel);                  // clearing hte pixels sheet
+            /*Drawing the stars*/
+            for (int i = 0; i < STARS_COUNT; i++) {
+                if (stars[i].z <= 0.1) stars[i].z = (float)(distribution(generator) % 5);
+                int x = (stars[i].x / -stars[i].z) + displayWidth / 2;
+                int y = (stars[i].y / -stars[i].z) + displayHeight / 2;
+                renderer::renderPixel((char*)pixelsArray, displayWidth, displayHeight, bytesPerPixel, x, y, starColor, 2);
+                stars[i].z -= 0.1;
+            }
+            /*Rendering the canvas to the screen*/
+            renderer::renderCanvas(windowId, pixelsArray, displayWidth, displayHeight, bytesPerPixel);              // re-initialize the canvas
             lastTime = current_time;
-            gradGenerator((char*)pixelsArray, displayWidth, displayHeight, bytesPerPixel, offset++);    // rerender the pixel array
-            initCanvas(windowId, pixelsArray, displayWidth, displayHeight, bytesPerPixel);              // re-initialize the canvas
         }
     }
-     
+
+    /*releasing the pixels sheet*/
+    if(pixelsArray != 0)
+        VirtualFree(pixelsArray, 0, MEM_RELEASE);
+
     return 0;
 }
 
 
 
+
+/*==================== EXTRA FUNCTIONS ============================*/
 
 
 /*
@@ -91,66 +130,6 @@ long long getCurrentTime_nanoseconds() {
 
 
 
-/*
-* Explanation: This funciton initializes the canvas ( Client Area ) with the given parameters
-* Parameters:
-    windowId - A handler to the window
-    pixelsArray - a pointer to the memory address with the pixel values ( the bitmap will use ) to be copied to the client area of the window
-    displayWidth - the image width (display / client_area / Canvas width)
-    displayHeight - the image height (display / client_area / Canvas height)
-    bytesPerPixel - How many bytes do each pixel occupy?
-*/
-void initCanvas(const HWND& windowId, void* pixelsArray, const int& displayWidth, const int& displayHeight, const int& bytesPerPixel) {
-    //_______________________________  Creating a bitmap to render the window Client area (visible area) with
-    HDC windowCanvas = GetDC(windowId);
-    BITMAPINFO bmi = { 0 }; // background bitmap
-    BITMAPINFOHEADER bmiHeader = { sizeof(BITMAPINFOHEADER),         // size of the structure
-                                        displayWidth, -displayHeight,   // width and height of the bitmap
-                                        1,                              // must be set to 1 according to MSDN
-                                        8 * bytesPerPixel,                // bits per pixel
-                                        BI_RGB,                         // uncompressed bitmap. Compressiono of bitmap option
-                                        displayHeight * displayWidth * 4,   // size of the image in bytes: (32/8) * w * h
-                                        GetDeviceCaps(windowCanvas, HORZRES) / GetDeviceCaps(windowCanvas,HORZSIZE), // the pixels per meter ratio of the width
-                                        GetDeviceCaps(windowCanvas, VERTRES) / GetDeviceCaps(windowCanvas,VERTSIZE), // the pixels per meter ratio of the height
-                                        0 /*colour table indices*/ ,0  /*0 = all colours are important*/
-    };
-    bmi.bmiHeader = bmiHeader;
-
-    if (!StretchDIBits(windowCanvas, // window canvas
-        0, 0, displayWidth, displayHeight,
-        0, 0, displayWidth, displayHeight, // streched width and height
-        pixelsArray, // pixels to be streched
-        &bmi, // the bitmap info
-        DIB_RGB_COLORS, SRCCOPY))
-        MessageBox(NULL, L"hello", L"HOOO", MB_OK);
-
-    ReleaseDC(windowId, windowCanvas);
-
-}
-
-
-/*
-* Explanation: A function that takes an array of pixels (1byte array). Then it fills it up with a radiant filling through the index x
-* Parameters : 
-    pixels - A pointer to the begining of the pixels array
-    width - width of the pixel array
-    height - height of the pixel arra
-    pixelSize - bytes per pixel for the remapping from coordinates to the exact pixel values
-*/
-void gradGenerator(char* pixels, const unsigned int& width, const unsigned int& height, const unsigned int& pixelSize, const unsigned int& offset) {
-    if (pixelSize != 4) {
-        return;
-    }
-    for (unsigned int x = 0; x < width; x++) {
-        for (unsigned int y = 0; y < height; y++) {
-            unsigned int index = (x + y * width ) * pixelSize;
-            pixels[index] = (x+offset) % 255;            //r
-            pixels[index + 1] = (y+offset) % 255;        //g
-            pixels[index + 2] = index % 255;    //b
-       }   
-    }
-}
-
 
 
 
@@ -162,7 +141,7 @@ void gradGenerator(char* pixels, const unsigned int& width, const unsigned int& 
     display height - height of the window in pixels
 * Returns: A handle to the created window.
 */
-HWND initWindow(HINSTANCE processId,  int displayWidth, int displayHeight) {
+HWND initWindow(HINSTANCE processId, const unsigned int& displayWidth, const unsigned int& displayHeight) {
     //________________________________  Creating a window
     LPCSTR windowClassName = "rasterizerWindow";
 
@@ -206,6 +185,9 @@ HWND initWindow(HINSTANCE processId,  int displayWidth, int displayHeight) {
     );
     return windowId;
 }
+
+
+
 
 /*
 * Event handling function.
