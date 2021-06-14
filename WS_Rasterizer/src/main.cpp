@@ -1,5 +1,6 @@
 #include <windows.h>    // _WINDOWS_ 
 #include <string>
+#include <algorithm>
 #include <random>
 #include "Geometry.h"
 #include "renderer.h"
@@ -7,7 +8,7 @@
 #define SEC_TO_NANOSEC 1000000000LL
 #define SEC_TO_MILLISEC 1000LL
 #define NANOSECONDS_PER_FRAME (SEC_TO_NANOSEC/60LL)
-#define STARS_COUNT 10000
+#define STARS_COUNT 10000 // you can go crazy here
 
 
 
@@ -15,7 +16,6 @@ void printMessage(const std::wstring& msg); //printing a message to the console
 LRESULT CALLBACK eventHandler(HWND, UINT, WPARAM, LPARAM); // handle the window events
 HWND initWindow(HINSTANCE processId, const unsigned int& displayWidth , const unsigned int& displayHeight); // initialize the window
 long long getCurrentTime_nanoseconds(); // gets a high resolution time in nanoseconds
-int randomInteger(int min, int max);
 
 
 
@@ -30,30 +30,9 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     int imageSize = displayHeight * displayWidth * bytesPerPixel;
     void* pixelsArray = VirtualAlloc(0, imageSize , MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 
-    
-    /*Initializing the stars field*/
-    renderer::Color starColor = { 255,255,255,0 };      //white
-    geometry::Vector3<float> stars[STARS_COUNT];
-    std::uniform_int_distribution<int> distribution(-1000, 1000);   // the range of the generator, This is a function that takes an engine later
-    std::default_random_engine generator;                           // the random generator engine
-    for (int i = 0; i < STARS_COUNT; i++) {
-        float x = (float)(distribution(generator) % displayWidth);
-        float y = (float)(distribution(generator) % displayHeight);
-        float z = (float)(distribution(generator) % 5);
-        geometry::Vector3<float> temp(x,y,z);
-        stars[i] = temp;
-    }
-
-
-    
-
-
-
-
     //__________________________ Initializing the window area
     HWND windowId = initWindow(processId, displayWidth, displayHeight);
     renderer::renderCanvas(windowId, pixelsArray, displayWidth, displayHeight, bytesPerPixel);
-    
     
     //________________________ program main loop.
     long long lastTime = getCurrentTime_nanoseconds();
@@ -75,14 +54,36 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
             //..
             /*Rendering logic*/
             renderer::clearPixels((char*)pixelsArray, displayWidth, displayHeight, bytesPerPixel);                  // clearing hte pixels sheet
-            /*Drawing the stars*/
-            for (int i = 0; i < STARS_COUNT; i++) {
-                if (stars[i].z <= 0.1) stars[i].z = (float)(distribution(generator) % 5);
-                int x = (stars[i].x / -stars[i].z) + displayWidth / 2;
-                int y = (stars[i].y / -stars[i].z) + displayHeight / 2;
-                renderer::renderPixel((char*)pixelsArray, displayWidth, displayHeight, bytesPerPixel, x, y, starColor, 2);
-                stars[i].z -= 0.1;
+
+
+            /*Drawing the Triangles*/
+            geometry::Vector_3D<float> v1(100.0, -100.0, 1.0);
+            geometry::Vector_3D<float> v2(-100.0, -100.0, 1.0);
+            geometry::Vector_3D<float> v3(0.0, 100.0, 1.0);
+            //geometry::Triangle_3D<float> tri(v1,v2,v3);
+
+            //projecting the 3 points..
+            geometry::Vector_2D<int> sv1((v1.x / v1.z) + displayWidth / 2, (v1.y / -v1.z) + displayHeight / 2);
+            geometry::Vector_2D<int> sv2((v2.x / v2.z) + displayWidth / 2, (v2.y / -v2.z) + displayHeight / 2);
+            geometry::Vector_2D<int> sv3((v3.x / v3.z) + displayWidth / 2, (v3.y / -v3.z) + displayHeight / 2);
+
+            renderer::Color col = { 255,255,255,0 };
+            
+            /*Going through the boxing boundries of the triangle*/
+            for (int x = min(sv1.x, min(sv2.x, sv3.x)); x <= max(sv1.x, max(sv2.x, sv3.x)); x++) {
+                for (int y = min(sv1.y, min(sv2.y, sv3.y)); y <= max(sv1.y, max(sv2.y, sv3.y)); y++) {
+                    geometry::Vector_2D<int> point(x,y);
+                    // Using the EdgeFunction Algorithm to quickly check if a point is inside a triangle or not
+                    bool isInside = (sv2 - sv1).crossProduct(point - sv1) >= 0
+                                 && (sv3 - sv2).crossProduct((point - sv2)) >= 0
+                                 && (sv1 - sv3).crossProduct((point - sv3)) >= 0;
+
+                    if(isInside)
+                        renderer::renderPixel((char*)pixelsArray, displayWidth, displayHeight, bytesPerPixel, x, y, col, 1);
+                }
             }
+            
+
             /*Rendering the canvas to the screen*/
             renderer::renderCanvas(windowId, pixelsArray, displayWidth, displayHeight, bytesPerPixel);              // re-initialize the canvas
             lastTime = current_time;
@@ -93,6 +94,7 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     if(pixelsArray != 0)
         VirtualFree(pixelsArray, 0, MEM_RELEASE);
 
+    //delete[] stars; // tried to render 1000000 stars .. and it works super fine lol!!
     return 0;
 }
 
@@ -116,6 +118,10 @@ void printMessage(const std::wstring& msg) {
 
 
 
+
+
+
+
 /*
 * Explanation: A high resolution time query.
 * Returns: The current high-resolution system time in nanoseconds.
@@ -126,6 +132,9 @@ long long getCurrentTime_nanoseconds() {
     QueryPerformanceFrequency(&ticksPerSec);                            //  ticks per second
     return (SEC_TO_NANOSEC * ticks.QuadPart) / ticksPerSec.QuadPart;    // return the elapsed time in nanoseconds
 }
+
+
+
 
 
 
@@ -159,13 +168,9 @@ HWND initWindow(HINSTANCE processId, const unsigned int& displayWidth, const uns
         NULL
     };
 
-
-    if (!RegisterClassExA(&windowDefinition))
-    {
-        MessageBox(NULL, L"Failed to register the window", L"Failed" ,MB_OK);
-        exit(-1);
-    }
-
+    if (!RegisterClassExA(&windowDefinition))   
+        { MessageBox(NULL, L"Failed to register the window", L"Failed" ,MB_OK); exit(-1); }
+    
     //From the canvas size we get the window size
     RECT canvas = {0,0, displayWidth, displayHeight};
     AdjustWindowRect(&canvas, WS_CAPTION | WS_THICKFRAME, false);
@@ -185,6 +190,9 @@ HWND initWindow(HINSTANCE processId, const unsigned int& displayWidth, const uns
     );
     return windowId;
 }
+
+
+
 
 
 

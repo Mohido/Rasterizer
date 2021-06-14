@@ -18,7 +18,7 @@ void renderer::gradGenerator(char* pixels, const unsigned int& width, const unsi
             unsigned int index = (x + y * width) * pixelSize;
             pixels[index] = (x + offset) % 255;            //r
             pixels[index + 1] = (y + offset) % 255;        //g
-            pixels[index + 2] = index % 255;    //b
+            pixels[index + 2] = index % 255;               //b
         }
     }
 }
@@ -89,7 +89,18 @@ void renderer::clearPixels(char* pixels, const unsigned int& width, const unsign
 
 
 
-/**/
+/*
+* Explanation: Draws a single pixel with the given colour to the given pixel array.
+* Parameters:
+    pixelsArray - a pointer to the memory address with the pixel values ( the bitmap will use ) to be copied to the client area of the window
+    displayWidth - the image width (display / client_area / Canvas width)
+    displayHeight - the image height (display / client_area / Canvas height)
+    bytesPerPixel - How many bytes do each pixel occupy?
+    xCord - the x-cordinate of the pixel
+    yCord - the y-cordinate of the pixel
+    col - A Color Structure that determines the color of the pixel
+    size - the intensity of the pixel (it can take multiple pixels according to the given input)
+*/
 void renderer::renderPixel(char* pixels, const unsigned int& width, const unsigned int& height, const unsigned int& pixelSize,
                             const unsigned int& xCord, const unsigned int& yCord, const Color& col, const unsigned int& size) 
 {
