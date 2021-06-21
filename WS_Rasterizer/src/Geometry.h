@@ -1,18 +1,24 @@
 #pragma once
-#ifndef Geometry
-#define Geometry
+#ifndef GEOMETRY
+#define GEOMETRY
+
+#include "renderer.h"
 #include <vector>
+
+
 
 
 namespace geometry {
 
-	// Mathematics Geometrical representations.
+	/*============================ Matrices Area ============================ */
 	template<class T>
 	class Matrix_3x3 {};
 	template<class T>
 	class Matrix_4x4 {};
 
 
+
+	/*============================ 2D Representation ============================ */
 	template<class T>
 	struct Vector_2D {
 		T x, y;
@@ -22,7 +28,7 @@ namespace geometry {
 		/*
 		* Cross Product Function for 2 2d vectors. Returns the scaler of the Z axis.
 		*/
-		static T crossProduct (Vector_2D<T> v1, Vector_2D<T> v2) {
+		static T crossProduct(Vector_2D<T> v1, Vector_2D<T> v2) {
 			return v1.x * v2.y - v1.y * v2.x;		 // determinant (Length of the new axis)
 		}
 		T crossProduct(Vector_2D<T> v2) {
@@ -31,47 +37,9 @@ namespace geometry {
 
 		T lengthSqr() const { return this->x * this->x + this->y * this->y; }
 		/* Minus overriding*/
-		Vector_2D<T> operator-(Vector_2D<T> v2) {	return Vector_2D<T>(this->x - v2.x, this->y - v2.y); }
+		Vector_2D<T> operator-(Vector_2D<T> v2) { return Vector_2D<T>(this->x - v2.x, this->y - v2.y); }
 
 	};
-
-	template<class T>
-	struct Vector_3D {
-		T x, y, z;
-		Vector_3D(T x, T y, T z) : x(x), y(y), z(z) {}
-		Vector_3D() { this->x = 0; this->y = 0; this->z = 0; }
-		T lengthSqr() const { return this->x*this->x + this->y*this->y + this->z*this->z; }
-		Vector_3D<T> operator-(Vector_3D<T> v2) {	 return Vector_3D<T>(this->x - v2.x, this->y - v2.y, this->z - v2.z); }
-	};
-
-
-
-	// Geometric Shapes - Polygons Area
-	template<class T>
-	class Triangle_3D {
-		Vector_3D<T> vertex_1, vertex_2, vertex_3;
-		float area;
-	public:
-		Triangle_3D(Vector_3D<T> v1, Vector_3D<T> v2, Vector_3D<T> v3)
-			: vertex_1(v1), vertex_2(v2), vertex_3(v3)
-		{
-			// This area needs to be implemented when matrix is implemented and the determinant of matrix is implemented
-			// Or the crossProduct of the Vector_3D is implemented. we can simply do as we did in teh Triangle 2d
-			this->area = 0;
-		}
-
-		Triangle_3D() {
-			this->vertex_1 = { 0 };
-			this->vertex_2 = { 0 };
-			this->vertex_3 = { 0 };
-		}
-
-		/*Getters Area*/
-		float getArea() { return this->area; }
-		std::vector< Vector_3D<T> > getVertices() { return { vertex_1, vertex_2, vertex_3 };}
-	};
-
-
 
 	template<class T>
 	class Triangle_2D {
@@ -106,6 +74,60 @@ namespace geometry {
 		float getArea() { return this->area; }
 		std::vector< Vector_2D<T> > getVertices() { return { vertex_1, vertex_2, vertex_3 }; }
 	};
+
+
+
+
+	/*============================ 3D Representations ============================*/
+	template<class T>
+	struct Vector_3D {
+		T x, y, z;
+		Vector_3D(T x, T y, T z) : x(x), y(y), z(z) {}
+		Vector_3D() { this->x = 0; this->y = 0; this->z = 0; }
+		T lengthSqr() const { return this->x * this->x + this->y * this->y + this->z * this->z; }
+		Vector_3D<T> operator-(Vector_3D<T> v2) { return Vector_3D<T>(this->x - v2.x, this->y - v2.y, this->z - v2.z); }
+	};
+
+
+	template<class T>
+	struct Vertex_3D {
+		renderer::Color col;
+		Vector_3D<T> position;
+		Vertex_3D(Vector_3D<T> pos = Vector_3D<T>(), renderer::Color c = renderer::Color())
+			: position(pos), col(c)
+		{}
+	};
+
+
+
+	template<class T>
+	class Triangle_3D {
+		Vertex_3D<T> vertex_1, vertex_2, vertex_3;
+		float area;
+	public:
+		Triangle_3D(Vector_3D<T> v1, Vector_3D<T> v2, Vector_3D<T> v3)
+			: vertex_1(v1), vertex_2(v2), vertex_3(v3), area(0) // area needs to be implemented with CrossProduct of vectors
+		{}
+
+		Triangle_3D(Vertex_3D<T> v1, Vertex_3D<T> v2, Vertex_3D<T> v3)
+			: vertex_1(v1), vertex_2(v2), vertex_3(v3), area(0) // area needs to be implemented with crossproduct of vectors
+		{}
+
+		Triangle_3D() 
+		{
+			this->vertex_1 = Vertex_3D<T>();
+			this->vertex_2 = Vertex_3D<T>();
+			this->vertex_3 = Vertex_3D<T>();
+		}
+
+		/*Getters Area*/
+		float getArea() { return this->area; }
+		std::vector< Vertex_3D<T> > getVertices() { return { vertex_1, vertex_2, vertex_3 };}
+	};
+
+
+
+	
 
 
 

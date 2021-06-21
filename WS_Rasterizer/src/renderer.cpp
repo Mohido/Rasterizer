@@ -107,9 +107,9 @@ void renderer::renderPixel(char* pixels, const unsigned int& width, const unsign
     if (xCord >= width - size || yCord >= height - size || xCord <= 0 + size || yCord <= 0 + size) return;
     for (int i = 0; i < size; i++) {
         for (int j = 0; j < size; j++) {
-            pixels[(xCord+i + (yCord + j) * width) * pixelSize] = col.r;
+            pixels[(xCord+i + (yCord + j) * width) * pixelSize] = col.b;
             pixels[(xCord+i + (yCord + j) * width) * pixelSize + 1] = col.g;
-            pixels[(xCord+i + (yCord + j) * width) * pixelSize + 2] = col.b;
+            pixels[(xCord+i + (yCord + j) * width) * pixelSize + 2] = col.r;
             pixels[(xCord+i + (yCord + j) * width) * pixelSize + 3] = col.a;
         }
     }

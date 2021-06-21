@@ -1,6 +1,6 @@
 #pragma once
-#ifndef Renderer
-#define Renderer
+#ifndef RENDERER
+#define RENDERER
 
 #ifndef _WINDOWS_ // if windows api not included yet
 #include <windows.h>
@@ -10,7 +10,10 @@
 namespace renderer {
 
 	struct Color {
-		char r; char g; char b; char a; 
+		unsigned char r, g, b, a; 
+		Color(const unsigned char& red=0, const unsigned char& green=0, const unsigned char& blue = 0, const unsigned char& alpha = 0)
+			: r(red), g(green), b(blue), a(alpha)
+		{}
 	};
 
 	void gradGenerator(char* pixels, const unsigned int& width, const unsigned int& height, const unsigned int& pixelSize, const unsigned int& offset); // fill the array of pixels with a gradient colour
