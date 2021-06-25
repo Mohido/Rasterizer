@@ -4,21 +4,73 @@
 
 #include "renderer.h"
 #include <vector>
-
-
-
+#include <string>
 
 namespace geometry {
 
-	/*============================ Matrices Area ============================ */
+/*========================================== Matrices Area ====================================*/
+
 	template<class T>
-	class Matrix_3x3 {};
+	struct Matrix_3x3 {
+		T m_matrix[3][3];
+
+		Matrix_3x3( const T& a_00, const T& a_01, const T& a_02,
+					const T& a_10, const T& a_11, const T& a_12,
+					const T& a_20, const T& a_21, const T& a_22 )
+		{
+			m_matrix[0][0] = a_00; m_matrix[0][1] = a_01; m_matrix[0][2] = a_02;
+			m_matrix[1][0] = a_10; m_matrix[1][1] = a_11; m_matrix[1][2] = a_12;
+			m_matrix[2][0] = a_20; m_matrix[2][1] = a_21; m_matrix[2][2] = a_22;
+		}
+	};
+
+
+
+
 	template<class T>
-	class Matrix_4x4 {};
+	struct Matrix_4x4 {
+		T m_matrix[4][4];
+
+		Matrix_4x4( const T& a_00, const T& a_01, const T& a_02, const T& a_03,
+					const T& a_10, const T& a_11, const T& a_12, const T& a_13,
+					const T& a_20, const T& a_21, const T& a_22, const T& a_23,
+					const T& a_30, const T& a_31, const T& a_32, const T& a_33)
+		{
+			m_matrix[0][0] = a_00; m_matrix[0][1] = a_01; m_matrix[0][2] = a_02; m_matrix[0][3] = a_03;
+			m_matrix[1][0] = a_10; m_matrix[1][1] = a_11; m_matrix[1][2] = a_12; m_matrix[1][3] = a_13;
+			m_matrix[2][0] = a_20; m_matrix[2][1] = a_21; m_matrix[2][2] = a_22; m_matrix[2][3] = a_23;
+			m_matrix[3][0] = a_30; m_matrix[3][1] = a_31; m_matrix[3][2] = a_32; m_matrix[3][3] = a_33;
+		}
+		/* Creates an identity matrix */
+		Matrix_4x4() {
+			for (int i = 0; i < 4; i++) {
+				for (int j = 0; j < 4; j++) {
+					m_matrix[i][j] = (i == j) ? 1 : 0;
+				}
+			}
+		}
+		/* Creates a matrix from another one*/
+		Matrix_4x4(const Matrix_4x4<T>& src) {
+			for (int i = 0; i < 4; i++) {
+				for (int j = 0; j < 4; j++) {
+					m_matrix[i][j] = src.m_matrix[i][j];
+				}
+			}
+		}
+
+		/*A function that gives back the inverse of a Matrix by using partial pivoting*/
+		Matrix_4x4<T> inverse();
+		/*Returns an elegant string that visually represents the Matrix data*/
+		std::string toString();
+	};
 
 
 
-	/*============================ 2D Representation ============================ */
+
+
+/*====================================== 2D Representation ====================================== */
+
+
 	template<class T>
 	struct Vector_2D {
 		T x, y;
@@ -40,6 +92,7 @@ namespace geometry {
 		Vector_2D<T> operator-(Vector_2D<T> v2) { return Vector_2D<T>(this->x - v2.x, this->y - v2.y); }
 
 	};
+
 
 	template<class T>
 	class Triangle_2D {
@@ -78,7 +131,9 @@ namespace geometry {
 
 
 
-	/*============================ 3D Representations ============================*/
+/*======================================= 3D Representations =======================================*/
+
+
 	template<class T>
 	struct Vector_3D {
 		T x, y, z;
@@ -124,14 +179,6 @@ namespace geometry {
 		float getArea() { return this->area; }
 		std::vector< Vertex_3D<T> > getVertices() { return { vertex_1, vertex_2, vertex_3 };}
 	};
-
-
-
-	
-
-
-
-
 
 }
 

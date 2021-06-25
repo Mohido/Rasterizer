@@ -56,7 +56,7 @@ void renderer::renderCanvas(const HWND& windowId, void* pixelsArray, const int& 
         pixelsArray, // pixels to be streched
         &bmi, // the bitmap info
         DIB_RGB_COLORS, SRCCOPY))
-        MessageBox(NULL, L"hello", L"HOOO", MB_OK);
+            MessageBox(NULL, L"hello", L"HOOO", MB_OK);
 
     ReleaseDC(windowId, windowCanvas);
 }

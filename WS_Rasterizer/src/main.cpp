@@ -95,7 +95,7 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
             renderer::clearPixels((char*)pixelsArray, displayWidth, displayHeight, bytesPerPixel);                  // clearing hte pixels sheet
             
 
-           
+           //going through the mesh triangles individualy
             for ( auto tri : mesh) {
                 
                 std::vector<geometry::Vertex_3D<float>> vertices = tri.getVertices(); // the vertix contain col and pos for now
@@ -106,6 +106,7 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
                 geometry::Vector_3D<float> v3 = vertices[2].position;
                 if (v1.z == 0.0 || v2.z == 0.0 || v3.z == 0.0) continue; // if the triangle is beyond the camera veiw, don't draw it
 
+                /*Projecting Triangle Vertices*/
                 geometry::Vector_2D<int> sv1((v1.x / v1.z) + displayWidth / 2, (v1.y / -v1.z) + displayHeight / 2);
                 geometry::Vector_2D<int> sv2((v2.x / v2.z) + displayWidth / 2, (v2.y / -v2.z) + displayHeight / 2);
                 geometry::Vector_2D<int> sv3((v3.x / v3.z) + displayWidth / 2, (v3.y / -v3.z) + displayHeight / 2);
