@@ -1,8 +1,9 @@
 #define NOMINMAX
 #include <windows.h>    // _WINDOWS_ 
 #include <string>
-#include <random>
-#include <limits>
+#include <limits> // limits to get Infinity (used in the depth buffer)
+#define _USE_MATH_DEFINES
+#include <math.h>
 #include "renderer.h"
 #include "geometry.h"
 
@@ -24,6 +25,12 @@ long long getCurrentTime_nanoseconds(); // gets a high resolution time in nanose
 
 int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nCmdShow)
 {   
+
+    //TODO: Loading .obj to the game and trying out to render a whole mesh
+    //TODO: Fix the rotation problem,
+    //TODO: Add Camera projection and better projection algorithm, with aspect ratio fixing
+    //TODO: seperate the updating and rendering functionalities to their own functions rather than all the JUNK in the update loop()
+
     //___________________________ Varialbe initializiation area
     int displayWidth = 512; // image width. Pixels
     int displayHeight = 512; // image height. Pixels
@@ -41,28 +48,17 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 
 
     /*Triangle 1*/
-    geometry::Vector_3D<float> vec1(100.0, -100.0, 1.0);
-    geometry::Vector_3D<float> vec2(-100.0, -100.0, 1.0);
-    geometry::Vector_3D<float> vec3(0.0, 100.0, 1.0);
+    double rotator = 0;
+
+    geometry::Vector_3D<float> vec1(1, -1, 0);
+    geometry::Vector_3D<float> vec2(-1, -1, 0);
+    geometry::Vector_3D<float> vec3(0, 1, 0);
 
     geometry::Vertex_3D<float> ver1(vec1, renderer::Color(255,0,0,0));
     geometry::Vertex_3D<float> ver2(vec2, renderer::Color( 0, 255, 0, 0));
-    geometry::Vertex_3D<float> ver3(vec3, renderer::Color( 0, 0, 255, 0)); 
+    geometry::Vertex_3D<float> ver3(vec3, renderer::Color( 0, 0, 255, 0));
 
     mesh.push_back( geometry::Triangle_3D<float>(ver1, ver2, ver3) );
-
-    /*Triangle 2: For checking intersection problem*/
-    geometry::Vector_3D<float> vec11(150.0, -100.0, 2.0);
-    geometry::Vector_3D<float> vec22(-50, 0, 0.5);
-    geometry::Vector_3D<float> vec33(200.0, 100.0, 2.0);
-
-    geometry::Vertex_3D<float> ver11(vec11, renderer::Color(255, 0, 0, 0));
-    geometry::Vertex_3D<float> ver22(vec22, renderer::Color(0, 255, 0, 0));
-    geometry::Vertex_3D<float> ver33(vec33, renderer::Color(0, 0, 255, 0));
-
-    mesh.push_back(geometry::Triangle_3D<float>(ver11, ver22, ver33));
-
-
 
 
     //__________________________ Initializing the window area
@@ -97,19 +93,48 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 
            //going through the mesh triangles individualy
             for ( auto tri : mesh) {
+
+                // Transformation Matrices
+                // TODO: Using 1 number for rotation instead of the expensive sin and cosin 1 - 0.1(degree of rotation)
+                geometry::Matrix_4x4<float> rotation_z    ( cos(rotator) ,sin(rotator),0,0,
+                                                           -sin(rotator), cos(rotator),0,0,
+                                                            0,0,1,0,
+                                                            0,0,0,1); // transitioning the x
+
+                geometry::Matrix_4x4<float> rotation_y (cos(rotator),0, sin(rotator),0,
+                                                       0,1,0, 0,
+                                                       -sin(rotator), 0 , cos(rotator), 0,
+                                                       0, 0, 0, 1); // transitioning the x
+
+                
+                geometry::Matrix_4x4<float> translation ( 1, 0, 0, 0,
+                                                          0, 1, 0, 0,
+                                                          0, 0, 1, 0,
+                                                          0, 0, 3, 1 );
+
+
+                //rotator = ( rotator >= 1.0 )? 0: rotator + 0.01;
+                rotator += 0.01;
+                
                 
                 std::vector<geometry::Vertex_3D<float>> vertices = tri.getVertices(); // the vertix contain col and pos for now
 
                 /*getting the vertices positions (points/vectors) to simplify writing them*/
-                geometry::Vector_3D<float> v1 = vertices[0].position;
-                geometry::Vector_3D<float> v2 = vertices[1].position;
-                geometry::Vector_3D<float> v3 = vertices[2].position;
+ 
+                geometry::Vector_3D<float> v1 = (vertices[0].position * rotation_y) * translation;
+                geometry::Vector_3D<float> v2 = (vertices[1].position * rotation_y) * translation;
+                geometry::Vector_3D<float> v3 = (vertices[2].position * rotation_y) * translation;
+
+               /* std::string te = v2.toString() + v1.toString() + v3.toString();
+                printMessage(std::wstring(te.begin(), te.end()));*/
+
                 if (v1.z == 0.0 || v2.z == 0.0 || v3.z == 0.0) continue; // if the triangle is beyond the camera veiw, don't draw it
 
                 /*Projecting Triangle Vertices*/
-                geometry::Vector_2D<int> sv1((v1.x / v1.z) + displayWidth / 2, (v1.y / -v1.z) + displayHeight / 2);
-                geometry::Vector_2D<int> sv2((v2.x / v2.z) + displayWidth / 2, (v2.y / -v2.z) + displayHeight / 2);
-                geometry::Vector_2D<int> sv3((v3.x / v3.z) + displayWidth / 2, (v3.y / -v3.z) + displayHeight / 2);
+                // TODO:: Implementing of Camera projection + aspect ratio editing
+                geometry::Vector_2D<int> sv1( (v1.x / v1.z)*displayWidth + displayWidth / 2.0 , (v1.y / -v1.z) * displayWidth +displayHeight / 2.0);
+                geometry::Vector_2D<int> sv2( (v2.x / v2.z)*displayWidth + displayWidth / 2.0 , (v2.y / -v2.z) * displayWidth +displayHeight / 2.0);
+                geometry::Vector_2D<int> sv3( (v3.x / v3.z)*displayWidth + displayWidth / 2.0 , (v3.y / -v3.z) * displayWidth +displayHeight / 2.0);
                 geometry::Triangle_2D<int> tri_screen(sv1, sv2, sv3); // used for simplifying the pointInside() function and might come in handy later
 
                 /*
@@ -130,12 +155,19 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 
                 /*Going through the boxing boundries of the triangle*/
                 for (int y = std::min(sv1.y, std::min(sv2.y, sv3.y)); y <= std::max(sv1.y, std::max(sv2.y, sv3.y)); y++) {
+                    if (y < 0) continue;
+                    if (y >= displayHeight) break;
                     for (int x = std::min(sv1.x, std::min(sv2.x, sv3.x)); x <= std::max(sv1.x, std::max(sv2.x, sv3.x)); x++) {
+                        if (x < 0) continue;
+                        if (x >= displayWidth) break;
+
                         geometry::Vector_2D<int> point(x, y);
 
+                        // Note that the edgeFunction algorithm clips the triangle if it was reverse (inversed). Which is a great additional feature.
+                        // not rendering the backside of the triangle is because of the clockwise triangle rendering. rotating (inversing) will breach the clockwise rendering rule.
                         bool isInside = tri_screen.pointInside(point);  // Using the EdgeFunction Algorithm to quickly check if a point is inside a triangle or not
-
-                        if (isInside) {
+                        
+                        if (isInside) {                        
                             /*Getting the Ratios of the point (Barcyntric Interpolation)*/
                             float area_1 = abs((point - sv2).crossProduct(point - sv3)) / 2; // Parallelgram Area / 2... 
                             float ratio_1 = area_1 / tri_screen.getArea();
@@ -151,7 +183,7 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
                             float fullRatio_3 = z_3_inv * ratio_3;
 
                             float depth = 1 / (fullRatio_1 + fullRatio_2 + fullRatio_3);
-                            if (depth <= 0.1) continue;
+                            if (depth <= 0) continue;
 
                             if (depth < depthArray[x + y * displayWidth]) {
 

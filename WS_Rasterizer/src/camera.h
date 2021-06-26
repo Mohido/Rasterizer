@@ -28,7 +28,7 @@ namespace cameras {
 						const float& nearClipping,
 						const int& displayWidth, const int& displayHeight)
 		: m_origin(origin), m_focalLength(focalLength), m_filmWidth(filmWidth), m_filmHeight(filmHeight) 
-			, m_nearClipping(nearClipping), m_displayWidth(displayWidth), m_displayHeight(displayHeight) 
+				, m_nearClipping(nearClipping), m_displayWidth(displayWidth), m_displayHeight(displayHeight) 
 		{
 			this->m_filmAspectRatio = filmWidth / filmHeight;
 			this->m_displayAspectRatio = displayWidth / (float)displayHeight;
@@ -38,8 +38,8 @@ namespace cameras {
 			const float& focalLength, const float& filmWidth, const float& filmHeight,
 			const float& nearClipping,
 			const int& displayWidth, const int& displayHeight)
-			: m_origin(origin), m_focalLength(focalLength), m_filmWidth(filmWidth), m_filmHeight(filmHeight)
-			, m_nearClipping(nearClipping), m_displayWidth(displayWidth), m_displayHeight(displayHeight)
+		: m_origin(origin), m_focalLength(focalLength), m_filmWidth(filmWidth), m_filmHeight(filmHeight)
+				, m_nearClipping(nearClipping), m_displayWidth(displayWidth), m_displayHeight(displayHeight)
 		{
 			this->m_transformation = geometry::Matrix_4x4<float>();
 			this->m_filmAspectRatio = filmWidth / filmHeight;

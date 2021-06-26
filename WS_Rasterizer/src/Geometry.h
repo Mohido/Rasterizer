@@ -8,6 +8,10 @@
 
 namespace geometry {
 
+
+
+
+
 /*========================================== Matrices Area ====================================*/
 
 	template<class T>
@@ -26,7 +30,7 @@ namespace geometry {
 
 
 
-
+	/*Note that we use Row major for dealing with matrices here.*/
 	template<class T>
 	struct Matrix_4x4 {
 		T m_matrix[4][4];
@@ -58,10 +62,20 @@ namespace geometry {
 			}
 		}
 
-		/*A function that gives back the inverse of a Matrix by using partial pivoting*/
-		Matrix_4x4<T> inverse();
-		/*Returns an elegant string that visually represents the Matrix data*/
-		std::string toString();
+
+
+		Matrix_4x4<T> inverse(); /*A function that gives back the inverse of a Matrix by using partial pivoting*/
+	
+		std::string toString() {
+			std::string s = std::to_string(this->m_matrix[0][0]) + " " + std::to_string(this->m_matrix[0][1]) + " " + std::to_string(this->m_matrix[0][2]) + " " + std::to_string(this->m_matrix[0][3]) + "\n";
+			s += std::to_string(this->m_matrix[1][0]) + " " + std::to_string(this->m_matrix[1][1]) + " " + std::to_string(this->m_matrix[1][2]) + " " + std::to_string(this->m_matrix[1][3]) + "\n";
+			s += std::to_string(this->m_matrix[2][0]) + " " + std::to_string(this->m_matrix[2][1]) + " " + std::to_string(this->m_matrix[2][2]) + " " + std::to_string(this->m_matrix[2][3]) + "\n";
+			s += std::to_string(this->m_matrix[3][0]) + " " + std::to_string(this->m_matrix[3][1]) + " " + std::to_string(this->m_matrix[3][2]) + " " + std::to_string(this->m_matrix[3][3]) + "\n";
+			return s;
+		}
+		
+		Matrix_4x4<T> operator*(const Matrix_4x4<T>& M);/*Multiplyting 2 matrices*/
+
 	};
 
 
@@ -140,6 +154,17 @@ namespace geometry {
 		Vector_3D(T x, T y, T z) : x(x), y(y), z(z) {}
 		Vector_3D() { this->x = 0; this->y = 0; this->z = 0; }
 		T lengthSqr() const { return this->x * this->x + this->y * this->y + this->z * this->z; }
+		std::string toString() { return "[" + std::to_string(this->x) + "," + std::to_string(this->y) + "," + std::to_string(this->z) + "]\n";}
+
+
+		Vector_3D<T> operator*(const Matrix_4x4<T>& M) {
+			T x_ = this->x * M.m_matrix[0][0] + this->y * M.m_matrix[1][0] + this->z * M.m_matrix[2][0] + M.m_matrix[3][0];
+			T y_ = this->x * M.m_matrix[0][1] + this->y * M.m_matrix[1][1] + this->z * M.m_matrix[2][1] + M.m_matrix[3][1];
+			T z_ = this->x * M.m_matrix[0][2] + this->y * M.m_matrix[1][2] + this->z * M.m_matrix[2][2] + M.m_matrix[3][2];
+			T w_ = this->x * M.m_matrix[0][3] + this->y * M.m_matrix[1][3] + this->z * M.m_matrix[2][3] + M.m_matrix[3][3];
+			if (w_ == 0) return Vector_3D<T>(); // returns the 0 vector if division by 0 accured
+			return Vector_3D<T>(x_ / w_, y_ / w_, z_ / w_);
+		}
 		Vector_3D<T> operator-(Vector_3D<T> v2) { return Vector_3D<T>(this->x - v2.x, this->y - v2.y, this->z - v2.z); }
 	};
 
@@ -180,6 +205,19 @@ namespace geometry {
 		std::vector< Vertex_3D<T> > getVertices() { return { vertex_1, vertex_2, vertex_3 };}
 	};
 
+
+
+//=============================== Geometry general functions ==========================================
+	template <class T>
+	extern Vector_3D<T> mul_vectorMatrix(const Vector_3D<T>& vec, const Matrix_4x4<T>& M) {
+		T x = vec.x * M.m_matrix[0][0] + vec.y * M.m_matrix[1][0] + vec.z * M.m_matrix[2][0] + M.m_matrix[3][0];
+		T y = vec.x * M.m_matrix[0][1] + vec.y * M.m_matrix[1][1] + vec.z * M.m_matrix[2][1] + M.m_matrix[3][1];
+		T z = vec.x * M.m_matrix[0][2] + vec.y * M.m_matrix[1][2] + vec.z * M.m_matrix[2][2] + M.m_matrix[3][2];
+		T w = vec.x * M.m_matrix[0][3] + vec.y * M.m_matrix[1][3] + vec.z * M.m_matrix[2][3] + M.m_matrix[3][3];
+
+		if (w == 0) return Vector_3D<T>(); // returns the 0 vector if division by 0 accured
+		return Vector_3D<T>(x / w, y / w, z / w);
+	}
 }
 
 #endif // !Geometry
