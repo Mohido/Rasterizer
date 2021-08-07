@@ -183,6 +183,7 @@ namespace geometry {
 	template<class T>
 	class Triangle_3D {
 		Vertex_3D<T> vertex_1, vertex_2, vertex_3;
+		Matrix_4x4<float> transformation; // transformation matrix
 		float area;
 	public:
 		Triangle_3D(Vector_3D<T> v1, Vector_3D<T> v2, Vector_3D<T> v3)

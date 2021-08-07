@@ -40,12 +40,9 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 
     /*Z-Buffer*/
     float* depthArray = (float*)VirtualAlloc(0, displayHeight * displayWidth * 4, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-    //memset(depthArray, std::numeric_limits<char>::max(), displayHeight * displayWidth * 4); is initialized in the loop down below
-    //for (int i = 0; i < displayHeight * displayWidth; i++) { depthArray[i] = INFINITY_F; } // Manual initializing the values of the float
 
     // _________________________ Initializing the triangles
     std::vector<geometry::Triangle_3D<float>> mesh;
-
 
     /*Triangle 1*/
     double rotator = 0;
@@ -89,11 +86,8 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 
             /*Rendering logic*/
             renderer::clearPixels((char*)pixelsArray, displayWidth, displayHeight, bytesPerPixel);                  // clearing hte pixels sheet
-            
-
-           //going through the mesh triangles individualy
-            for ( auto tri : mesh) {
-
+           
+            for ( auto tri : mesh) { //going through the mesh triangles individualy
                 // Transformation Matrices
                 // TODO: Using 1 number for rotation instead of the expensive sin and cosin 1 - 0.1(degree of rotation)
                 geometry::Matrix_4x4<float> rotation_z    ( cos(rotator) ,sin(rotator),0,0,
@@ -110,7 +104,7 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
                 geometry::Matrix_4x4<float> translation ( 1, 0, 0, 0,
                                                           0, 1, 0, 0,
                                                           0, 0, 1, 0,
-                                                          0, 0, 3, 1 );
+                                                          0, 0, 2, 1 );
 
 
                 //rotator = ( rotator >= 1.0 )? 0: rotator + 0.01;
@@ -120,10 +114,9 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
                 std::vector<geometry::Vertex_3D<float>> vertices = tri.getVertices(); // the vertix contain col and pos for now
 
                 /*getting the vertices positions (points/vectors) to simplify writing them*/
- 
-                geometry::Vector_3D<float> v1 = (vertices[0].position * rotation_y) * translation;
-                geometry::Vector_3D<float> v2 = (vertices[1].position * rotation_y) * translation;
-                geometry::Vector_3D<float> v3 = (vertices[2].position * rotation_y) * translation;
+                geometry::Vector_3D<float> v1 = vertices[0].position * translation; //(vertices[0].position * rotation_y) * translation;
+                geometry::Vector_3D<float> v2 = vertices[1].position * translation; //(vertices[1].position * rotation_y) * translation;
+                geometry::Vector_3D<float> v3 = vertices[2].position * translation; //(vertices[2].position * rotation_y) * translation;
 
                /* std::string te = v2.toString() + v1.toString() + v3.toString();
                 printMessage(std::wstring(te.begin(), te.end()));*/
@@ -156,7 +149,7 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
                 /*Going through the boxing boundries of the triangle*/
                 for (int y = std::min(sv1.y, std::min(sv2.y, sv3.y)); y <= std::max(sv1.y, std::max(sv2.y, sv3.y)); y++) {
                     if (y < 0) continue;
-                    if (y >= displayHeight) break;
+                    if (y >= displayHeight) break; // rendering from top to bottom since the image is read from top to bottom
                     for (int x = std::min(sv1.x, std::min(sv2.x, sv3.x)); x <= std::max(sv1.x, std::max(sv2.x, sv3.x)); x++) {
                         if (x < 0) continue;
                         if (x >= displayWidth) break;
@@ -169,7 +162,7 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
                         
                         if (isInside) {                        
                             /*Getting the Ratios of the point (Barcyntric Interpolation)*/
-                            float area_1 = abs((point - sv2).crossProduct(point - sv3)) / 2; // Parallelgram Area / 2... 
+                            float area_1 = abs((point - sv2).crossProduct(point - sv3)) / 2; // Triangle area = Parallelgram Area / 2... 
                             float ratio_1 = area_1 / tri_screen.getArea();
 
                             float area_2 = abs((sv1 - point).crossProduct(sv3 - point)) / 2;
