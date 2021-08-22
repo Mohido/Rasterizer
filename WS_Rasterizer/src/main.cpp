@@ -14,12 +14,18 @@
 #define NANOSECONDS_PER_FRAME (SEC_TO_NANOSEC/60LL)
 
 
+/// Camera inputing settings
+float theta = 0;  // angle in degrees
+float fi = 0;     // angle in degrees
+float x = 0, y = 0, z = 0; // transition
+
+
 
 void printMessage(const std::wstring& msg); //printing a message to the console
 LRESULT CALLBACK eventHandler(HWND, UINT, WPARAM, LPARAM); // handle the window events
 HWND initWindow(HINSTANCE processId, const unsigned int& displayWidth , const unsigned int& displayHeight); // initialize the window
 long long getCurrentTime_nanoseconds(); // gets a high resolution time in nanoseconds
-
+void keyboardHandler(const WPARAM& eventParameter);
 
 
 /*======================== MAIN FUNCTION ============================*/
@@ -29,7 +35,6 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 
     //TODO: Loading .obj to the game and trying out to render a whole mesh
     //TODO: Fix the rotation problem,
-    //TODO: Add Camera projection and better projection algorithm, with aspect ratio fixing
     //TODO: seperate the updating and rendering functionalities to their own functions rather than all the JUNK in the update loop()
 
     //___________________________ Varialbe initializiation area
@@ -79,6 +84,7 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     bool running = true;
 
     while (running) {
+        
         /*Process new events*/ // Note: Peekmessage returns false if there is no new message
         while (PeekMessage(&msg, NULL, NULL, NULL, PM_REMOVE)) { // peek does not halt the program, unlike getMessage(); 
             if (msg.message == WM_QUIT) running = false;
@@ -90,33 +96,25 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
         /*Update and render*/
         long long current_time = getCurrentTime_nanoseconds();
         if (current_time - lastTime >= NANOSECONDS_PER_FRAME) { // every frame 
+            printMessage(std::to_wstring((current_time - lastTime) / 1000000)); // It takes around 200 MS to render 1 triangle???
+            /*Last time is updated*/
+            lastTime = current_time;
             /*Inputing logic*/
-            
+            //camera.moveBackward();
+            camera.move(theta,fi,x,y,z);
             /*Setting up depth buffer*/
             memset(depthArray, std::numeric_limits<char>::max(), displayHeight * displayWidth * 4);
-
 
             /*Rendering logic*/
             renderer::clearPixels((char*)pixelsArray, displayWidth, displayHeight, bytesPerPixel);                  // clearing hte pixels sheet
            
             for ( auto tri : mesh) { //going through the mesh triangles individualy
-                
-                //std::vector<geometry::Vertex_3D<float>> vertices = tri.getVertices(); /*// the vertix contain col and pos for now*/
-                //camera.moveBackward();
-                /*
-                getting the vertices positions (points/vectors) to simplify writing them
-                geometry::Vector_3D<float> v1 = vertices[0].position; //(vertices[0].position * rotation_y) * translation;
-                geometry::Vector_3D<float> v2 = vertices[1].position; //(vertices[1].position * rotation_y) * translation;
-                geometry::Vector_3D<float> v3 = vertices[2].position; //(vertices[2].position * rotation_y) * translation;
-                */
-
-               /* std::string te = v2.toString() + v1.toString() + v3.toString();
-                printMessage(std::wstring(te.begin(), te.end()));*/
-
+               
                 geometry::Triangle_3D<float> screenTri;
                 std::vector<geometry::Vertex_3D<float>> vertices;
                 geometry::Vector_3D<float> v1, v2, v3;
                 geometry::Vector_2D<int> sv1, sv2, sv3;
+
                 try {
                     screenTri = camera.projectToCamera(tri);
                     vertices = screenTri.getVertices();
@@ -127,13 +125,6 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
                     sv1.x = v1.x; sv1.y = v1.y;
                     sv2.x = v2.x; sv2.y = v2.y;
                     sv3.x = v3.x; sv3.y = v3.y;
-
-                    /*std::string s1 = v1.toString();
-                    printMessage(std::wstring(s1.begin(),s1.end()));
-                    std::string s2 = v2.toString();
-                    printMessage(std::wstring(s2.begin(), s2.end()));
-                    std::string s3 = v3.toString();
-                    printMessage(std::wstring(s3.begin(), s3.end()));*/
                 }
                 catch (std::exception e) {
                     printMessage(L"Devision by 0!");
@@ -141,13 +132,6 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
                 }
 
 
-                //if (v1.z == 0.0 || v2.z == 0.0 || v3.z == 0.0) continue; // if the triangle is beyond the camera veiw, don't draw it
-
-                /*Projecting Triangle Vertices*/
-                // TODO:: Implementing of Camera projection + aspect ratio editing
-                //geometry::Vector_2D<int> sv1( (v1.x / v1.z)*displayWidth + displayWidth / 2.0 , (v1.y / -v1.z) * displayWidth +displayHeight / 2.0);
-                //geometry::Vector_2D<int> sv2( (v2.x / v2.z)*displayWidth + displayWidth / 2.0 , (v2.y / -v2.z) * displayWidth +displayHeight / 2.0);
-                //geometry::Vector_2D<int> sv3( (v3.x / v3.z)*displayWidth + displayWidth / 2.0 , (v3.y / -v3.z) * displayWidth +displayHeight / 2.0);
                 geometry::Triangle_2D<int> tri_screen(sv1, sv2, sv3); // used for simplifying the pointInside() function and might come in handy later
 
                 /*
@@ -231,15 +215,15 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
                             }
                         }
                     }
-                }
-            }
+                }// looping screen pixels
+            } // looping mesh triangles
             
 
-
+            theta = 0;
+            fi = 0;
             /*Rendering the canvas to the screen*/
             renderer::renderCanvas(windowId, pixelsArray, displayWidth, displayHeight, bytesPerPixel);              // re-initialize the canvas
-            /*Last time is updated*/
-            lastTime = current_time;
+            
         }
     }
 
@@ -277,9 +261,9 @@ void printMessage(const std::wstring& msg) {
 */
 long long getCurrentTime_nanoseconds() {
     LARGE_INTEGER ticks; LARGE_INTEGER ticksPerSec;
-    QueryPerformanceCounter(&ticks);                                    //  ticks since the begining of the program
-    QueryPerformanceFrequency(&ticksPerSec);                            //  ticks per second
-    return (SEC_TO_NANOSEC * ticks.QuadPart) / ticksPerSec.QuadPart;    // return the elapsed time in nanoseconds
+    QueryPerformanceCounter(&ticks);                                     //   ticks since the begining of the program
+    QueryPerformanceFrequency(&ticksPerSec);                            //   ticks per second
+    return (SEC_TO_NANOSEC * ticks.QuadPart) / ticksPerSec.QuadPart;    //   return the elapsed time in nanoseconds
 }
 
 
@@ -344,15 +328,64 @@ HWND initWindow(HINSTANCE processId, const unsigned int& displayWidth, const uns
 LRESULT CALLBACK eventHandler(HWND windowId, UINT eventType, WPARAM eventParameter, LPARAM parameterFlags)
 {
     switch (eventType) {
-    case WM_CREATE:
-        //OutputDebugStringA("\nWindow created!\n\n");
-        break;
+    //case WM_CREATE:
+    //    //OutputDebugStringA("\nWindow created!\n\n");
+    //    break;
     case WM_CLOSE:
         PostQuitMessage(0);
+        break;
+    case WM_KEYDOWN:
+        keyboardHandler(eventParameter);
         break;
     default:
         return DefWindowProcA(windowId, eventType, eventParameter, parameterFlags);
         break;
     }
     return 0;
+}
+
+
+void keyboardHandler(const WPARAM& eventParameter) {
+    WORD vkCode = LOWORD(eventParameter);                                       // virtual-key code
+    
+    switch (vkCode) {
+    case VK_UP: // up arrow
+        theta += 0.2;
+        break;
+    case VK_DOWN:
+        theta -= 0.2;
+        break;
+
+    case VK_RIGHT:
+        fi -= 0.2;
+        break;
+    case VK_LEFT:
+        fi += 0.2;
+        break;
+
+    case 0x41: // A Key
+        x -= 0.2;
+        break;
+    case 0x44: // D Key
+        x += 0.2;
+        break;
+
+    case 0x57: // W key
+        y += 0.2;
+        break;
+    case 0x53: // S key
+        y -= 0.2;
+        break;
+
+    case 0x51: // Q Key
+        z += 0.2;
+        break;
+    case 0x5A: // Z key
+        z -= 0.2;
+        break;
+
+
+    default:
+        break;
+    }
 }
