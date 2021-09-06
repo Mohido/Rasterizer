@@ -265,7 +265,7 @@ namespace geometry {
 	struct Vertex_3D {
 		renderer::Color col;
 		Vector_3D<T> position;
-		Vertex_3D(Vector_3D<T> pos = Vector_3D<T>(), renderer::Color c = renderer::Color())
+		Vertex_3D(Vector_3D<T> pos = Vector_3D<T>(), renderer::Color c = renderer::Color(255,255,255,0))
 			: position(pos), col(c)
 		{}
 	};

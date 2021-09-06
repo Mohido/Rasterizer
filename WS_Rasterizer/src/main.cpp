@@ -7,6 +7,7 @@
 #include "renderer.h"
 #include "geometry.h"
 #include "camera.h"
+#include "mesh_loader.h"
 
 
 #define SEC_TO_NANOSEC 1000000000LL
@@ -49,16 +50,18 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 
     // _________________________ Initializing the triangles
     std::vector<geometry::Triangle_3D<float>> mesh;
+    loadMesh(mesh);
+    //geometry::Vector_3D<float> vec1(1, -1, 3);
+    //geometry::Vector_3D<float> vec2(-1, -1, 3);
+    //geometry::Vector_3D<float> vec3(0, 1, 3);
 
-    geometry::Vector_3D<float> vec1(1, -1, 3);
-    geometry::Vector_3D<float> vec2(-1, -1, 3);
-    geometry::Vector_3D<float> vec3(0, 1, 3);
+    //geometry::Vertex_3D<float> ver1(vec1/*, renderer::Color(255,0,0,0)*/);
+    //geometry::Vertex_3D<float> ver2(vec2/*, renderer::Color( 0, 255, 0, 0)*/);
+    //geometry::Vertex_3D<float> ver3(vec3/*, renderer::Color( 0, 0, 255, 0)*/);
+    //mesh.push_back( geometry::Triangle_3D<float>(ver1, ver2, ver3) );
 
-    geometry::Vertex_3D<float> ver1(vec1, renderer::Color(255,0,0,0));
-    geometry::Vertex_3D<float> ver2(vec2, renderer::Color( 0, 255, 0, 0));
-    geometry::Vertex_3D<float> ver3(vec3, renderer::Color( 0, 0, 255, 0));
 
-    mesh.push_back( geometry::Triangle_3D<float>(ver1, ver2, ver3) );
+
 
     // _________________________ Initializing the camera
 
@@ -96,7 +99,7 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
         /*Update and render*/
         long long current_time = getCurrentTime_nanoseconds();
         if (current_time - lastTime >= NANOSECONDS_PER_FRAME) { // every frame 
-            printMessage(std::to_wstring((current_time - lastTime) / 1000000)); // It takes around 200 MS to render 1 triangle???
+            //printMessage(std::to_wstring((current_time - lastTime) / 1000000)); // It takes around 200 MS to render 1 triangle???
             /*Last time is updated*/
             lastTime = current_time;
             /*Inputing logic*/

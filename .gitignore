@@ -2,6 +2,7 @@
 *.d
 
 WS_Rasterizer/x64/
+WS_Rasterizer/[Rr]elease/
 
 # Compiled Object files
 *.slo
@@ -10,6 +11,7 @@ WS_Rasterizer/x64/
 *.obj
 
 [Dd]ebug/
+[Rr]elease/
 .vs/
 *.user
 
