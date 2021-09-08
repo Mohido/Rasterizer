@@ -14,3 +14,11 @@ This program is made for learning purposes. It is the second 3D renderer techniq
 <br>
 ## Image: Depth Interpolation and rotation transformation <br>
 ![Depth Interpolation and Transformation](https://user-images.githubusercontent.com/48254077/123496526-c9f14400-d628-11eb-8383-eb3e2ef55d69.png)
+<br><br>
+<hr>
+<br>
+## Image: Rendering a bad-shaded cow to the scene. <br>
+![FirstObject](https://user-images.githubusercontent.com/48254077/132569356-c402cba1-535e-4771-9531-b2eb70eebf2a.png)
+<br><br>
+<hr>
+<br>
