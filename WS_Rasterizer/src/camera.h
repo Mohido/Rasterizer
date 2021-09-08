@@ -132,7 +132,7 @@ namespace cameras {
 		*	@Returns: a triangle which describes the projected vertices final destination on the screen. 
 			And the 3d Demension is the deminsion of the z_depth of the vertices
 		*/
-		geometry::Triangle_3D<float> projectToCamera(geometry::Triangle_3D<float>& tri){
+		bool projectToCamera(geometry::Triangle_3D<float>& tri, geometry::Triangle_3D<float>& resultTriangle){
 			// The output vectors
 			std::vector<geometry::Vector_3D<float>> ret;
 			ret.reserve(3);
@@ -142,7 +142,7 @@ namespace cameras {
 				geometry::Vector_3D<float> v = mul_vectorMatrix(vert.position, this->m_transformation_inv);
 
 				// Checking validity of the transformed vertex from world to camera
-				if (v.z <= 0) throw std::exception("Devision by 0");//return geometry::Triangle_3D<float>();
+				if (v.z <= 0) return false; // returning an exception is costly enought to slow the rendering process
 
 				// Projecting the point to the camera
 				geometry::Vector_2D<float> sv(v.x / v.z, (v.y / v.z));
@@ -160,23 +160,38 @@ namespace cameras {
 			}
 
 			// Return the screen vertices of the projected Triange
-			return geometry::Triangle_3D<float>(ret[0],ret[1],ret[2]);
+			resultTriangle = geometry::Triangle_3D<float>(ret[0],ret[1],ret[2]);
+			return true;
 		}
-		
 
+		/// <summary>
+		///	Moves the camera and rotate it accordin to the given parameters
+		/// Note that the rotationo is done the the transition for simplifying the usage.
+		/// </summary>
+		/// <param name="theta">rotation on the x-axis</param>
+		/// <param name="fi">rotation on the y-axis</param>
+		/// <param name="x">the x position of the camera</param>
+		/// <param name="y">the y position of the camera</param>
+		/// <param name="z">the z position of the camera</param>
 		void move(const float& theta, const float& fi, const float& x, const float& y, const float& z) {
 			this->m_transformation.m_matrix[3][0] = x; 
 			this->m_transformation.m_matrix[3][1] = y;
 			this->m_transformation.m_matrix[3][2] = z;
 
-			geometry::Matrix_4x4<float> rotationMatrix( (float)cos(fi),		(float)sin(fi)*sin(theta), (float)sin(fi)*cos(theta)	, 0,
+			geometry::Matrix_4x4<float> rotationMatrix( (float)cos(fi),		(float)(sin(fi)*sin(theta)), (float)(sin(fi)*cos(theta))	, 0,
 														(float)0	,		(float)cos(theta),		   (float)-sin(theta)			, 0,
-														(float)-sin(fi),	(float)cos(fi)*sin(theta), (float)cos(fi)*cos(theta)   , 0,
+														(float)-sin(fi),	(float)(cos(fi)*sin(theta)), (float)(cos(fi)*cos(theta))   , 0,
 														0,				0,		0,			 1);
 
-			this->m_transformation = this->m_transformation * rotationMatrix;
+			this->m_transformation =  rotationMatrix * this->m_transformation; // Dont reverse them.. We first need to rotate with the original coordinates then move the camera to the current coordinates
 			this->m_transformation_inv = this->m_transformation.inverse();
+			this->m_origin = geometry::Vector_3D<float>() * this->m_transformation; // The current origin
 		}
+
+		geometry::Vector_3D<float> getOrigin() {
+			return this->m_origin;
+		}
+
 
 		std::wstring toString() {
 			geometry::Matrix_4x4<float> inv = m_transformation.inverse();

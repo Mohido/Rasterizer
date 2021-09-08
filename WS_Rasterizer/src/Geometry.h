@@ -230,6 +230,8 @@ namespace geometry {
 				&& (vertex_1 - vertex_3).crossProduct((point - vertex_3)) >= 0;
 		}
 
+		
+
 		float getArea() { return this->area; }
 		std::vector< Vector_2D<T> > getVertices() { return { vertex_1, vertex_2, vertex_3 }; }
 	};
@@ -239,7 +241,7 @@ namespace geometry {
 
 /*======================================= 3D Representations =======================================*/
 
-
+	// Improvement (fast inverse sqr-root algorithm to get the 1/sqrt(len(vector)))
 	template<class T>
 	struct Vector_3D {
 		T x, y, z;
@@ -248,7 +250,22 @@ namespace geometry {
 		T lengthSqr() const { return this->x * this->x + this->y * this->y + this->z * this->z; }
 		std::string toString() { return "[" + std::to_string(this->x) + "," + std::to_string(this->y) + "," + std::to_string(this->z) + "]\n";}
 
+		Vector_3D<T> crossProduct(const Vector_3D<T>& other) {
+			return Vector_3D<T>(this->y*other.z - this->z*other.y,
+								this->z*other.x - this->x*other.z,
+								this->x*other.y - this->y*other.x);
+		}
 
+		T dotProduct(const Vector_3D<T> other) {return this->x * other.x + this->y * other.y + this->z * other.z;}
+
+		void normalise() {
+			float invSqrtLen = 1 / sqrt(this->lengthSqr());
+			this->x = this->x * invSqrtLen;
+			this->y = this->y * invSqrtLen;
+			this->z = this->z * invSqrtLen;
+		}
+
+		Vector_3D<T> operator*(T number) { return Vector_3D<T>(this->x * number, this->y * number, this->z * number); }
 		Vector_3D<T> operator*(const Matrix_4x4<T>& M) {
 			T x_ = this->x * M.m_matrix[0][0] + this->y * M.m_matrix[1][0] + this->z * M.m_matrix[2][0] + M.m_matrix[3][0];
 			T y_ = this->x * M.m_matrix[0][1] + this->y * M.m_matrix[1][1] + this->z * M.m_matrix[2][1] + M.m_matrix[3][1];
@@ -258,6 +275,7 @@ namespace geometry {
 			return Vector_3D<T>(x_ / w_, y_ / w_, z_ / w_);
 		}
 		Vector_3D<T> operator-(Vector_3D<T> v2) { return Vector_3D<T>(this->x - v2.x, this->y - v2.y, this->z - v2.z); }
+		Vector_3D<T> operator+(Vector_3D<T> v2) { return Vector_3D<T>(this->x + v2.x, this->y + v2.y, this->z + v2.z); }
 	};
 
 
@@ -292,6 +310,18 @@ namespace geometry {
 			this->vertex_2 = Vertex_3D<T>();
 			this->vertex_3 = Vertex_3D<T>();
 		}
+
+		geometry::Vector_3D<T> getNormal(geometry::Vector_3D<T>& midPoint = geometry::Vector_3D<T>()) {
+			midPoint = this->vertex_1.position * 0.33 + this->vertex_2.position * 0.33 + this->vertex_3.position * 0.33;
+			
+			//IMPROVE: fast inverse sqrt instead of the naive approach.
+			geometry::Vector_3D<T> normal = (midPoint - this->vertex_1.position).crossProduct(midPoint - this->vertex_2.position);
+			
+			normal.normalise();
+			return normal;
+			//float invSqrtLen = 1 / sqrt(this->lengthSqr());
+		}
+
 
 		/*Getters Area*/
 		float getArea() { return this->area; }

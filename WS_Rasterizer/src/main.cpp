@@ -113,13 +113,28 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
            
             for ( auto tri : mesh) { //going through the mesh triangles individualy
                
+
+                geometry::Vector_3D<float> midPoint;
+                geometry::Vector_3D<float> Tri_norm = tri.getNormal(midPoint);
+
+                geometry::Vector_3D<float> camTri_norm = (midPoint - camera.getOrigin());
+                camTri_norm.normalise();
+                
+
+                float lightIntensity = fabs(Tri_norm.dotProduct(camTri_norm));
+
+
+                //std::string normalStr = normal.toString();
+                //printMessage(std::wstring(normalStr.begin(), normalStr.end()));
+                //printMessage(std::to_wstring(normal.lengthSqr()));
+
+
                 geometry::Triangle_3D<float> screenTri;
                 std::vector<geometry::Vertex_3D<float>> vertices;
                 geometry::Vector_3D<float> v1, v2, v3;
                 geometry::Vector_2D<int> sv1, sv2, sv3;
 
-                try {
-                    screenTri = camera.projectToCamera(tri);
+                if(camera.projectToCamera(tri, screenTri)){
                     vertices = screenTri.getVertices();
                     
                     v1 = vertices[0].position;
@@ -129,8 +144,7 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
                     sv2.x = v2.x; sv2.y = v2.y;
                     sv3.x = v3.x; sv3.y = v3.y;
                 }
-                catch (std::exception e) {
-                    printMessage(L"Devision by 0!");
+                else{
                     continue;
                 }
 
@@ -210,7 +224,7 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
                                         ); // attr = z ( (attr_0 / z_0) *ratio_0 + (attr_1 / z_1) * ratio_1... ) 
 
 
-                                renderer::Color col(red, green, blue, 0);
+                                renderer::Color col(lightIntensity*red, lightIntensity*green, lightIntensity*blue, 0);
 
                                 depthArray[x + y * displayWidth] = depth;
                                 /*Rendering the point*/
