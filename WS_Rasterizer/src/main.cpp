@@ -1,5 +1,5 @@
 #define NOMINMAX
-#include <windows.h>    // _WINDOWS_ 
+#include <windows.h>    // _WINDOWS_
 #include <string>
 #include <limits> // limits to get Infinity (used in the depth buffer)
 #define _USE_MATH_DEFINES
@@ -32,7 +32,7 @@ void keyboardHandler(const WPARAM& eventParameter);
 /*======================== MAIN FUNCTION ============================*/
 
 int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nCmdShow)
-{   
+{
 
     //TODO: Loading .obj to the game and trying out to render a whole mesh
     //TODO: Fix the rotation problem,
@@ -80,25 +80,25 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     //__________________________ Initializing the window area
     HWND windowId = initWindow(processId, displayWidth, displayHeight);
     renderer::renderCanvas(windowId, pixelsArray, displayWidth, displayHeight, bytesPerPixel);
-    
+
     //________________________ program main loop.
     long long lastTime = getCurrentTime_nanoseconds();
     MSG msg = { 0 };
     bool running = true;
 
     while (running) {
-        
+
         /*Process new events*/ // Note: Peekmessage returns false if there is no new message
-        while (PeekMessage(&msg, NULL, NULL, NULL, PM_REMOVE)) { // peek does not halt the program, unlike getMessage(); 
+        while (PeekMessage(&msg, NULL, NULL, NULL, PM_REMOVE)) { // peek does not halt the program, unlike getMessage();
             if (msg.message == WM_QUIT) running = false;
-          
+
             TranslateMessage(&msg);     // adding a message to the queue
             DispatchMessageA(&msg);    // we process the last message we caught
         }
 
         /*Update and render*/
         long long current_time = getCurrentTime_nanoseconds();
-        if (current_time - lastTime >= NANOSECONDS_PER_FRAME) { // every frame 
+        if (current_time - lastTime >= NANOSECONDS_PER_FRAME) { // every frame
             //printMessage(std::to_wstring((current_time - lastTime) / 1000000)); // It takes around 200 MS to render 1 triangle???
             /*Last time is updated*/
             lastTime = current_time;
@@ -110,16 +110,16 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 
             /*Rendering logic*/
             renderer::clearPixels((char*)pixelsArray, displayWidth, displayHeight, bytesPerPixel);                  // clearing hte pixels sheet
-           
+
             for ( auto tri : mesh) { //going through the mesh triangles individualy
-               
+
 
                 geometry::Vector_3D<float> midPoint;
                 geometry::Vector_3D<float> Tri_norm = tri.getNormal(midPoint);
 
                 geometry::Vector_3D<float> camTri_norm = (midPoint - camera.getOrigin());
                 camTri_norm.normalise();
-                
+
 
                 float lightIntensity = fabs(Tri_norm.dotProduct(camTri_norm));
 
@@ -136,7 +136,7 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 
                 if(camera.projectToCamera(tri, screenTri)){
                     vertices = screenTri.getVertices();
-                    
+
                     v1 = vertices[0].position;
                     v2 = vertices[1].position;
                     v3 = vertices[2].position;
@@ -180,11 +180,11 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
                         // Note that the edgeFunction algorithm clips the triangle if it was reverse (inversed). Which is a great additional feature.
                         // not rendering the backside of the triangle is because of the clockwise triangle rendering. rotating (inversing) will breach the clockwise rendering rule.
                         bool isInside = tri_screen.pointInside(point);  // Using the EdgeFunction Algorithm to quickly check if a point is inside a triangle or not
-                        
-                        if (isInside) { 
-                            
+
+                        if (isInside) {
+
                             /*Getting the Ratios of the point (Barcyntric Interpolation)*/
-                            float area_1 = abs((point - sv2).crossProduct(point - sv3)) / 2; // Triangle area = Parallelgram Area / 2... 
+                            float area_1 = abs((point - sv2).crossProduct(point - sv3)) / 2; // Triangle area = Parallelgram Area / 2...
                             float ratio_1 = area_1 / tri_screen.getArea();
 
                             float area_2 = abs((sv1 - point).crossProduct(sv3 - point)) / 2;
@@ -201,16 +201,16 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
                             if (depth <= 0) continue;
 
                             if (depth < depthArray[x + y * displayWidth]) {
-                                
+
                                 vertices = tri.getVertices();
                                 //printMessage(L"Point is inside");
                                 /*Interpolating colours*/
                                 unsigned char red = depth *
-                                      ( fullRatio_1 * (vertices[0].col.r ) + 
+                                      ( fullRatio_1 * (vertices[0].col.r ) +
                                           fullRatio_2 * (vertices[1].col.r) +
                                           fullRatio_3 * (vertices[2].col.r)
                                           );
-                                 
+
                                 unsigned char green = depth *
                                     (fullRatio_1 * (vertices[0].col.g ) +
                                         fullRatio_2 * (vertices[1].col.g ) +
@@ -221,7 +221,7 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
                                     (fullRatio_1 * (vertices[0].col.b) +
                                         fullRatio_2 * (vertices[1].col.b) +
                                         fullRatio_3 * (vertices[2].col.b)
-                                        ); // attr = z ( (attr_0 / z_0) *ratio_0 + (attr_1 / z_1) * ratio_1... ) 
+                                        ); // attr = z ( (attr_0 / z_0) *ratio_0 + (attr_1 / z_1) * ratio_1... )
 
 
                                 renderer::Color col(lightIntensity*red, lightIntensity*green, lightIntensity*blue, 0);
@@ -234,13 +234,13 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
                     }
                 }// looping screen pixels
             } // looping mesh triangles
-            
+
 
             theta = 0;
             fi = 0;
             /*Rendering the canvas to the screen*/
             renderer::renderCanvas(windowId, pixelsArray, displayWidth, displayHeight, bytesPerPixel);              // re-initialize the canvas
-            
+
         }
     }
 
@@ -264,8 +264,7 @@ int WINAPI WinMain(HINSTANCE processId, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 * Parameters: A wide string which is the message value
 */
 void printMessage(const std::wstring& msg) {
-    LPCWSTR out_c = (LPCWSTR)msg.c_str();
-    OutputDebugStringW(out_c);
+    OutputDebugStringW(msg.c_str());
     OutputDebugStringW(L"\n");
 }
 
@@ -288,7 +287,7 @@ long long getCurrentTime_nanoseconds() {
 
 /*
 * Explanation: It craetes a window that is used in the current rasterizer software
-* Parameters: 
+* Parameters:
     processId - The main program Id.
     displayWidth - width of the window in pixels
     display height - height of the window in pixels
@@ -306,15 +305,15 @@ HWND initWindow(HINSTANCE processId, const unsigned int& displayWidth, const uns
         processId, // main process that the window will sit on
         NULL, // window icon
         NULL, // window cursor
-        NULL, // background colour 
+        NULL, // background colour
         NULL, // menu name
         windowClassName, // class identifier
         NULL
     };
 
-    if (!RegisterClassExA(&windowDefinition))   
-        { MessageBox(NULL, L"Failed to register the window", L"Failed" ,MB_OK); exit(-1); }
-    
+    if (!RegisterClassExA(&windowDefinition))
+        { MessageBoxA(NULL, "Failed to register the window", "Failed" ,MB_OK); exit(-1); }
+
     //From the canvas size we get the window size
     RECT canvas = {0,0, displayWidth, displayHeight};
     AdjustWindowRect(&canvas, WS_CAPTION | WS_THICKFRAME, false);
@@ -324,10 +323,10 @@ HWND initWindow(HINSTANCE processId, const unsigned int& displayWidth, const uns
         NULL, // window styles
         windowClassName, // registered class identifier
         "3D_Rasterizer", // title
-        WS_VISIBLE | WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX, // more window styles and attributes (resizing buttons and whatsoever) 
-        100, 100, // x,y origin     
-        canvas.right  - canvas.left, canvas.bottom - canvas.top, // width and height 
-        NULL, // parent window ID 
+        WS_VISIBLE | WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX, // more window styles and attributes (resizing buttons and whatsoever)
+        100, 100, // x,y origin
+        canvas.right  - canvas.left, canvas.bottom - canvas.top, // width and height
+        NULL, // parent window ID
         NULL, // menu Id
         NULL, // process ID (passed to the registered class)
         NULL // values to be passed to the window (used in createDestruct event)
@@ -364,7 +363,7 @@ LRESULT CALLBACK eventHandler(HWND windowId, UINT eventType, WPARAM eventParamet
 
 void keyboardHandler(const WPARAM& eventParameter) {
     WORD vkCode = LOWORD(eventParameter);                                       // virtual-key code
-    
+
     switch (vkCode) {
     case VK_UP: // up arrow
         theta += 0.2;

@@ -56,7 +56,7 @@ void renderer::renderCanvas(const HWND& windowId, void* pixelsArray, const int& 
         pixelsArray, // pixels to be streched
         &bmi, // the bitmap info
         DIB_RGB_COLORS, SRCCOPY))
-            MessageBox(NULL, L"hello", L"HOOO", MB_OK);
+            MessageBoxA(NULL, "hello", "HOOO", MB_OK);
 
     ReleaseDC(windowId, windowCanvas);
 }
@@ -71,7 +71,7 @@ void renderer::renderCanvas(const HWND& windowId, void* pixelsArray, const int& 
     width - width of the pixel array
     height - height of the pixel arra
     pixelSize - bytes per pixel for the remapping from coordinates to the exact pixel values
-* 
+*
 */
 void renderer::clearPixels(char* pixels, const unsigned int& width, const unsigned int& height, const unsigned int& pixelSize) {
     if (pixelSize != 4 && pixelSize != 3)
@@ -102,7 +102,7 @@ void renderer::clearPixels(char* pixels, const unsigned int& width, const unsign
     size - the intensity of the pixel (it can take multiple pixels according to the given input)
 */
 void renderer::renderPixel(char* pixels, const unsigned int& width, const unsigned int& height, const unsigned int& pixelSize,
-                            const unsigned int& xCord, const unsigned int& yCord, const Color& col, const unsigned int& size) 
+                            const unsigned int& xCord, const unsigned int& yCord, const Color& col, const unsigned int& size)
 {
     if (xCord >= width - size || yCord >= height - size || xCord <= 0 + size || yCord <= 0 + size) return;
     for (int i = 0; i < size; i++) {
